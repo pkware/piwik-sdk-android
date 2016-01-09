@@ -110,6 +110,10 @@ public class TrackerBulkURLWrapper {
         return params;
     }
 
+    public List<String> getEventsRaw(@NonNull Page page) {
+        return mEvents.subList(page.fromIndex, page.toIndex);
+    }
+
     /**
      * @param page Page object
      * @return tracked url. For example

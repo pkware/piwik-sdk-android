@@ -4,7 +4,7 @@
  * @link https://github.com/piwik/piwik-android-sdk
  * @license https://github.com/piwik/piwik-sdk-android/blob/master/LICENSE BSD-3 Clause
  */
-package org.piwik.sdk;
+package org.piwik.sdk.dispatcher;
 
 import android.util.Log;
 
@@ -13,8 +13,12 @@ import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.piwik.sdk.dispatcher.Dispatcher;
-import org.piwik.sdk.dispatcher.Packet;
+import org.piwik.sdk.FullEnvTestRunner;
+import org.piwik.sdk.Piwik;
+import org.piwik.sdk.QueryParams;
+import org.piwik.sdk.TestPiwikApplication;
+import org.piwik.sdk.TrackMe;
+import org.piwik.sdk.Tracker;
 import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
 
@@ -26,16 +30,13 @@ import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-
+import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth.assert_;
 
 @SuppressWarnings("deprecation")
 @Config(emulateSdk = 18, manifest = Config.NONE)
 @RunWith(FullEnvTestRunner.class)
-public class TestDispatcher {
+public class DispatcherTest {
 
     public Tracker createTracker() throws MalformedURLException {
         TestPiwikApplication app = (TestPiwikApplication) Robolectric.application;
@@ -54,45 +55,45 @@ public class TestDispatcher {
     }
 
     @Test
-    public void testSetTimeout() throws Exception {
+    public void setTimeout() throws Exception {
         Dispatcher dispatcher = createTracker().getDispatcher();
         dispatcher.setTimeOut(100);
-        assertEquals(dispatcher.getTimeOut(), 100);
+        assertThat(dispatcher.getTimeOut()).isEqualTo(100);
     }
 
     @Test
-    public void testForceDispatchTwice() throws Exception {
+    public void forceDispatchTwice() throws Exception {
         Dispatcher dispatcher = createTracker().getDispatcher();
         dispatcher.setDispatchInterval(-1);
         dispatcher.setTimeOut(20);
         dispatcher.submit("url");
 
-        assertTrue(dispatcher.forceDispatch());
-        assertFalse(dispatcher.forceDispatch());
+        assertThat(dispatcher.forceDispatch()).isTrue();
+        assertThat(dispatcher.forceDispatch()).isFalse();
     }
 
     @Test
-    public void testDoPostFailed() throws Exception {
+    public void doPostFailed() throws Exception {
         Dispatcher dispatcher = createTracker().getDispatcher();
         dispatcher.setTimeOut(1);
-        assertFalse(dispatcher.dispatch(new Packet(null, null)));
-        assertFalse(dispatcher.dispatch(new Packet(new URL("http://test/?s=^test"), new JSONObject())));
+        assertThat(dispatcher.dispatch(new Packet(null, null))).isFalse();
+        assertThat(dispatcher.dispatch(new Packet(new URL("http://test/?s=^test"), new JSONObject()))).isFalse();
     }
 
     @Test
-    public void testDoGetFailed() throws Exception {
+    public void doGetFailed() throws Exception {
         Dispatcher dispatcher = createTracker().getDispatcher();
         dispatcher.setTimeOut(1);
-        assertFalse(dispatcher.dispatch(new Packet(null)));
+        assertThat(dispatcher.dispatch(new Packet(null))).isFalse();
     }
 
     @Test
-    public void testUrlEncodeUTF8() throws Exception {
-        assertEquals(Dispatcher.urlEncodeUTF8((String) null), "");
+    public void urlEncodeUTF8() throws Exception {
+        assertThat(Dispatcher.urlEncodeUTF8((String) null)).isEmpty();
     }
 
     @Test
-    public void testSessionStartRaceCondition() throws Exception {
+    public void sessionStartRaceCondition() throws Exception {
         for (int i = 0; i < 10; i++) {
             Log.d("RaceConditionTest", (10 - i) + " race-condition tests to go.");
             getPiwik().setDryRun(true);
@@ -107,20 +108,20 @@ public class TestDispatcher {
             List<String> output = getFlattenedQueries(tracker.getDispatcher().getDryRunOutput());
             for (String out : output) {
                 if (output.indexOf(out) == 0) {
-                    assertTrue(out.contains("lang"));
-                    assertTrue(out.contains("_idts"));
-                    assertTrue(out.contains("new_visit"));
+                    assertThat(out.contains("lang")).isTrue();
+                    assertThat(out.contains("_idts")).isTrue();
+                    assertThat(out.contains("new_visit")).isTrue();
                 } else {
-                    assertFalse(out.contains("lang"));
-                    assertFalse(out.contains("_idts"));
-                    assertFalse(out.contains("new_visit"));
+                    assertThat(out.contains("lang")).isFalse();
+                    assertThat(out.contains("_idts")).isFalse();
+                    assertThat(out.contains("new_visit")).isFalse();
                 }
             }
         }
     }
 
     @Test
-    public void testMultiThreadDispatch() throws Exception {
+    public void multiThreadDispatch() throws Exception {
         final Tracker tracker = createTracker();
         tracker.setDispatchInterval(20);
 
@@ -133,7 +134,7 @@ public class TestDispatcher {
     }
 
     @Test
-    public void testForceDispatch() throws Exception {
+    public void forceDispatch() throws Exception {
         final Tracker tracker = createTracker();
         tracker.setDispatchInterval(-1);
 
@@ -142,15 +143,15 @@ public class TestDispatcher {
         final List<String> createdEvents = Collections.synchronizedList(new ArrayList<String>());
         launchTestThreads(tracker, threadCount, queryCount, createdEvents);
         Thread.sleep(500);
-        assertEquals(threadCount * queryCount, createdEvents.size());
-        assertEquals(0, tracker.getDispatcher().getDryRunOutput().size());
-        assertTrue(tracker.dispatch());
+        assertThat(createdEvents).hasSize(threadCount * queryCount);
+        assertThat(tracker.getDispatcher().getDryRunOutput()).isEmpty();
+        assertThat(tracker.dispatch()).isTrue();
 
         checkForMIAs(threadCount * queryCount, createdEvents, tracker.getDispatcher().getDryRunOutput());
     }
 
     @Test
-    public void testBatchDispatch() throws Exception {
+    public void batchDispatch() throws Exception {
         final Tracker tracker = createTracker();
         tracker.setDispatchInterval(1500);
 
@@ -159,15 +160,15 @@ public class TestDispatcher {
         final List<String> createdEvents = Collections.synchronizedList(new ArrayList<String>());
         launchTestThreads(tracker, threadCount, queryCount, createdEvents);
         Thread.sleep(1000);
-        assertEquals(threadCount * queryCount, createdEvents.size());
-        assertEquals(0, tracker.getDispatcher().getDryRunOutput().size());
+        assertThat(createdEvents).hasSize(threadCount * queryCount);
+        assertThat(tracker.getDispatcher().getDryRunOutput()).isEmpty();
         Thread.sleep(1000);
 
         checkForMIAs(threadCount * queryCount, createdEvents, tracker.getDispatcher().getDryRunOutput());
     }
 
     @Test
-    public void testRandomDispatchIntervals() throws Exception {
+    public void randomDispatchIntervals() throws Exception {
         final Tracker tracker = createTracker();
 
         final int threadCount = 10;
@@ -205,23 +206,23 @@ public class TestDispatcher {
             } else {
                 int currentEventCount = createdEvents.size();
                 int currentFlatQueryCount = flattenedQueries.size();
-                assertNotEquals(previousEventCount, currentEventCount);
-                assertNotEquals(previousFlatQueryCount, currentFlatQueryCount);
+                assertThat(currentEventCount).isNotEqualTo(previousEventCount);
+                assertThat(currentFlatQueryCount).isNotEqualTo(previousFlatQueryCount);
                 previousEventCount = currentEventCount;
                 previousFlatQueryCount = currentFlatQueryCount;
             }
         }
 
-        assertEquals(flattenedQueries.size(), expectedEvents);
-        assertEquals(createdEvents.size(), expectedEvents);
+        assertThat(flattenedQueries).hasSize(expectedEvents);
+        assertThat(createdEvents).hasSize(expectedEvents);
 
         // We are done, lets make sure can find all send queries in our dispatched results
         while (!createdEvents.isEmpty()) {
             String query = createdEvents.remove(0);
-            assertTrue(flattenedQueries.remove(query));
+            assertThat(flattenedQueries.remove(query)).isTrue();
         }
-        assertTrue(createdEvents.isEmpty());
-        assertTrue(flattenedQueries.isEmpty());
+        assertThat(createdEvents).isEmpty();
+        assertThat(flattenedQueries).isEmpty();
         Log.d("checkForMIAs", "All send queries are accounted for.");
     }
 
@@ -245,7 +246,7 @@ public class TestDispatcher {
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
-                        assertFalse(true);
+                        assert_().fail();
                     }
                 }
             }).start();

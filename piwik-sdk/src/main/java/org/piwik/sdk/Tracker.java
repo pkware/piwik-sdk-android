@@ -14,9 +14,11 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 
 import org.piwik.sdk.dispatcher.Dispatcher;
 import org.piwik.sdk.ecommerce.EcommerceItems;
+import org.piwik.sdk.storage.InMemoryStorageEngine;
 import org.piwik.sdk.tools.Checksum;
 import org.piwik.sdk.tools.CurrencyFormatter;
 import org.piwik.sdk.tools.DeviceHelper;
@@ -98,7 +100,7 @@ public class Tracker {
         mPiwik = piwik;
         mSiteId = siteId;
 
-        mDispatcher = new Dispatcher(mPiwik, mApiUrl, authToken);
+        mDispatcher = new Dispatcher(mPiwik, mApiUrl, authToken, new InMemoryStorageEngine());
 
         String userId = getSharedPreferences().getString(PREF_KEY_TRACKER_USERID, null);
         if (userId == null) {
@@ -125,7 +127,8 @@ public class Tracker {
         return mPiwik;
     }
 
-    protected URL getAPIUrl() {
+    @VisibleForTesting
+    public URL getAPIUrl() {
         return mApiUrl;
     }
 
@@ -793,7 +796,8 @@ public class Tracker {
         mLastEvent = null;
     }
 
-    protected Dispatcher getDispatcher() {
+    @VisibleForTesting
+    public Dispatcher getDispatcher() {
         return mDispatcher;
     }
 }

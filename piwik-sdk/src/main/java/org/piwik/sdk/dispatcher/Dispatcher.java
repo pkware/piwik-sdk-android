@@ -14,6 +14,7 @@ import android.support.annotation.VisibleForTesting;
 import org.json.JSONObject;
 import org.piwik.sdk.Piwik;
 import org.piwik.sdk.TrackerBulkURLWrapper;
+import org.piwik.sdk.storage.StorageEngine;
 import org.piwik.sdk.tools.Logy;
 
 import java.io.BufferedWriter;
@@ -27,8 +28,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
@@ -46,12 +45,12 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("deprecation")
 public class Dispatcher {
     private static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "Dispatcher";
-    private final BlockingQueue<String> mDispatchQueue = new LinkedBlockingQueue<>();
     private final Object mThreadControl = new Object();
     private final Semaphore mSleepToken = new Semaphore(0);
     private final Piwik mPiwik;
     private final URL mApiUrl;
     private final String mAuthToken;
+    private final StorageEngine storageEngine;
 
     private List<Packet> mDryRunOutput = Collections.synchronizedList(new ArrayList<Packet>());
 
@@ -60,10 +59,11 @@ public class Dispatcher {
 
     private volatile long mDispatchInterval = 120 * 1000; // 120s
 
-    public Dispatcher(Piwik piwik, URL apiUrl, String authToken) {
+    public Dispatcher(Piwik piwik, URL apiUrl, String authToken, StorageEngine storageEngine) {
         mPiwik = piwik;
         mApiUrl = apiUrl;
         mAuthToken = authToken;
+        this.storageEngine = storageEngine;
     }
 
     /**
@@ -86,6 +86,7 @@ public class Dispatcher {
 
     /**
      * Packets are collected and dispatched in batches, this intervals sets the pause between batches.
+     *
      * @param dispatchInterval in milliseconds
      */
     public void setDispatchInterval(long dispatchInterval) {
@@ -122,7 +123,7 @@ public class Dispatcher {
     }
 
     public void submit(String query) {
-        mDispatchQueue.add(query);
+        storageEngine.add(query);
         if (mDispatchInterval != -1)
             launch();
     }
@@ -140,9 +141,7 @@ public class Dispatcher {
                 }
 
                 int count = 0;
-                List<String> availableEvents = new ArrayList<>();
-                mDispatchQueue.drainTo(availableEvents);
-                Logy.d(LOGGER_TAG, "Drained " + availableEvents.size() + " events.");
+                List<String> availableEvents = storageEngine.get();
                 TrackerBulkURLWrapper wrapper = new TrackerBulkURLWrapper(mApiUrl, availableEvents, mAuthToken);
                 Iterator<TrackerBulkURLWrapper.Page> pageIterator = wrapper.iterator();
                 while (pageIterator.hasNext()) {
@@ -155,18 +154,21 @@ public class Dispatcher {
                             continue;
                         if (dispatch(new Packet(wrapper.getApiUrl(), eventData)))
                             count += page.elementsCount();
+                        storageEngine.remove(wrapper.getEventsRaw(page));
                     } else {
                         URL targetURL = wrapper.getEventUrl(page);
                         if (targetURL == null)
                             continue;
-                        if (dispatch(new Packet(targetURL)))
+                        if (dispatch(new Packet(targetURL))) {
                             count += 1;
+                            storageEngine.remove(wrapper.getEventsRaw(page));
+                        }
                     }
                 }
                 Logy.d(LOGGER_TAG, "Dispatched " + count + " events.");
                 synchronized (mThreadControl) {
                     // We may be done or this was a forced dispatch
-                    if (mDispatchQueue.isEmpty() || mDispatchInterval < 0) {
+                    if (storageEngine.isEmpty() || mDispatchInterval < 0) {
                         mRunning = false;
                         break;
                     }

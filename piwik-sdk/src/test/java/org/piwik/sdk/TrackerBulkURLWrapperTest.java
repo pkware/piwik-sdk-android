@@ -1,92 +1,104 @@
 package org.piwik.sdk;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static com.google.common.truth.Truth.assertThat;
 
 
 @Config(emulateSdk = 18, manifest = Config.NONE)
 @RunWith(RobolectricTestRunner.class)
 public class TrackerBulkURLWrapperTest {
 
-    private TrackerBulkURLWrapper createWrapper(String url, String... events) throws Exception{
-        if (url == null){
+    private TrackerBulkURLWrapper createWrapper(String url, String... events) throws MalformedURLException {
+        if (url == null) {
             url = "http://example.com/";
         }
         URL _url = new URL(url);
 
-        return new TrackerBulkURLWrapper(_url, Arrays.asList(events), "test_token");
+        return new TrackerBulkURLWrapper(_url, Collections.unmodifiableList(Arrays.asList(events)), "test_token");
     }
 
     @Test
-    public void testEmptyIterator() throws Exception {
+    public void emptyIterator() throws MalformedURLException {
         TrackerBulkURLWrapper wrapper = createWrapper(null);
-        assertFalse(wrapper.iterator().hasNext());
-        assertNull(wrapper.iterator().next());
+        assertThat(wrapper.iterator().hasNext()).isFalse();
+        assertThat(wrapper.iterator().next()).isNull();
     }
 
     @Test
-    public void testPageIterator() throws Exception {
+    public void pageIterator() throws MalformedURLException {
         TrackerBulkURLWrapper wrapper = createWrapper(null, "test1");
-        assertTrue(wrapper.iterator().hasNext());
-        assertEquals(wrapper.iterator().next().elementsCount(), 1);
-        assertNull(wrapper.iterator().next());
+        assertThat(wrapper.iterator().hasNext()).isTrue();
+        assertThat(wrapper.iterator().next().elementsCount()).isEqualTo(1);
+        assertThat(wrapper.iterator().next()).isNull();
     }
 
     @Test
-    public void testPage() throws Exception {
-        List<String> events = new LinkedList<String>();
+    public void page() throws JSONException, MalformedURLException {
+        List<String> events = new LinkedList<>();
         for (int i = 0; i < TrackerBulkURLWrapper.getEventsPerPage() * 2; i++) {
             events.add("eve" + i);
         }
         TrackerBulkURLWrapper wrapper = new TrackerBulkURLWrapper(new URL("http://example.com/"), events, null);
 
         Iterator<TrackerBulkURLWrapper.Page> it = wrapper.iterator();
-        assertTrue(it.hasNext());
-        while (it.hasNext()){
+        assertThat(it.hasNext()).isTrue();
+        while (it.hasNext()) {
             TrackerBulkURLWrapper.Page page = it.next();
-            assertEquals(page.elementsCount(), TrackerBulkURLWrapper.getEventsPerPage());
+            assertThat(page.elementsCount()).isEqualTo(TrackerBulkURLWrapper.getEventsPerPage());
             JSONArray requests = wrapper.getEvents(page).getJSONArray("requests");
-            assertEquals(requests.length(), TrackerBulkURLWrapper.getEventsPerPage());
-            assertTrue(requests.get(0).toString().startsWith("eve"));
-            assertTrue(requests.get(TrackerBulkURLWrapper.getEventsPerPage()-1).toString().length() >= 4);
-            assertFalse(page.isEmpty());
+            assertThat(requests.length()).isEqualTo(TrackerBulkURLWrapper.getEventsPerPage());
+            assertThat(requests.get(0).toString()).startsWith("eve");
+            assertThat(requests.get(TrackerBulkURLWrapper.getEventsPerPage() - 1).toString().length() >= 4).isTrue();
+            assertThat(page.isEmpty()).isFalse();
         }
-        assertFalse(it.hasNext());
-        assertNull(it.next());
+        assertThat(it.hasNext()).isFalse();
+        assertThat(it.next()).isNull();
     }
 
     @Test
-    public void testGetApiUrl() throws Exception {
+    public void getApiUrl() throws MalformedURLException {
         String url = "http://www.com/java.htm";
         TrackerBulkURLWrapper wrapper = createWrapper(url, "");
-        assertEquals(wrapper.getApiUrl().toString(), url);
+        assertThat(wrapper.getApiUrl().toString()).isEqualTo(url);
     }
 
     @Test
-    public void testGetEvents() throws Exception {
+    public void getEvents() throws JSONException, MalformedURLException {
         TrackerBulkURLWrapper wrapper = createWrapper(null, "?one=1", "?two=2");
         TrackerBulkURLWrapper.Page page = wrapper.iterator().next();
 
-        assertEquals(wrapper.getEvents(page).getJSONArray("requests").length(), 2);
-        assertEquals(wrapper.getEvents(page).getJSONArray("requests").get(0), "?one=1");
-        assertEquals(wrapper.getEvents(page).getJSONArray("requests").get(1), "?two=2");
-        assertEquals(wrapper.getEvents(page).getString("token_auth"), "test_token");
+        assertThat(wrapper.getEvents(page).getJSONArray("requests").length()).isEqualTo(2);
+        assertThat(wrapper.getEvents(page).getJSONArray("requests").get(0)).isEqualTo("?one=1");
+        assertThat(wrapper.getEvents(page).getJSONArray("requests").get(1)).isEqualTo("?two=2");
+        assertThat(wrapper.getEvents(page).getString("token_auth")).isEqualTo("test_token");
     }
 
     @Test
-    public void testGetEventUrl() throws Exception {
-        List<String> events = new LinkedList<String>();
+    public void getEventsRaw() throws MalformedURLException {
+        TrackerBulkURLWrapper wrapper = createWrapper(null, "?one=1", "?two=2");
+        TrackerBulkURLWrapper.Page page = wrapper.iterator().next();
+
+        List<String> events = wrapper.getEventsRaw(page);
+        assertThat(events).hasSize(2);
+    }
+
+    @Test
+    public void getEventUrl() throws MalformedURLException {
+        List<String> events = new LinkedList<>();
         for (int i = 0; i < TrackerBulkURLWrapper.getEventsPerPage() + 1; i++) {
             events.add("?eve" + i);
         }
@@ -97,8 +109,8 @@ public class TrackerBulkURLWrapperTest {
 
         //get second with only element
         TrackerBulkURLWrapper.Page page = wrapper.iterator().next();
-        assertEquals(page.elementsCount(), 1);
-        assertFalse(page.isEmpty());
-        assertEquals(wrapper.getEventUrl(page), new URL("http://example.com/?eve20"));
+        assertThat(page.elementsCount()).isEqualTo(1);
+        assertThat(page.isEmpty()).isFalse();
+        assertThat(wrapper.getEventUrl(page)).isEqualTo(new URL("http://example.com/?eve20"));
     }
 }

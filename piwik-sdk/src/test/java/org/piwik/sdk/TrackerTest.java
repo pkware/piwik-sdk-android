@@ -7,6 +7,7 @@ import org.json.JSONArray;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.piwik.sdk.dispatcher.DispatcherTest;
 import org.piwik.sdk.ecommerce.EcommerceItems;
 import org.piwik.sdk.plugins.CustomDimensions;
 import org.piwik.sdk.tools.UrlHelper;
@@ -319,7 +320,7 @@ public class TrackerTest {
                 }).start();
             }
             Thread.sleep(500);
-            List<String> flattenedQueries = TestDispatcher.getFlattenedQueries(tracker.getDispatcher().getDryRunOutput());
+            List<String> flattenedQueries = DispatcherTest.getFlattenedQueries(tracker.getDispatcher().getDryRunOutput());
             assertEquals(count, flattenedQueries.size());
             int found = 0;
             for (String query : flattenedQueries) {
