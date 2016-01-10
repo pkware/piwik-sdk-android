@@ -95,7 +95,7 @@ public class Tracker {
 
     public void setOptOut(boolean optOut) {
         isOptOut = optOut;
-        settings.setOptOut(optOut, siteId);
+        settings.setOptOut(siteId, optOut);
     }
 
     /**

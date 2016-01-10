@@ -16,7 +16,6 @@ import org.junit.runner.RunWith;
 import org.piwik.sdk.FullEnvTestRunner;
 import org.piwik.sdk.Piwik;
 import org.piwik.sdk.QueryParams;
-import org.piwik.sdk.TestPiwikApplication;
 import org.piwik.sdk.TrackMe;
 import org.piwik.sdk.Tracker;
 import org.robolectric.Robolectric;
@@ -255,6 +254,23 @@ public class DispatcherTest {
             }).start();
         }
         Log.d("launchTestThreads", "All launched.");
+    }
+
+    @Test
+    public void batchDispatch() throws Exception {
+        final Tracker tracker = createTracker();
+        tracker.setDispatchInterval(1500);
+
+        final int threadCount = 5;
+        final int queryCount = 5;
+        final List<String> createdEvents = Collections.synchronizedList(new ArrayList<String>());
+        launchTestThreads(tracker, threadCount, queryCount, createdEvents);
+        Thread.sleep(1000);
+        assertThat(createdEvents).hasSize(threadCount * queryCount);
+        assertThat(tracker.getDispatcher().getDryRunOutput()).isEmpty();
+        Thread.sleep(1000);
+
+        checkForMIAs(threadCount * queryCount, createdEvents, tracker.getDispatcher().getDryRunOutput());
     }
 
     @Test

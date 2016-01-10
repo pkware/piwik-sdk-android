@@ -24,6 +24,11 @@ public final class Settings {
         preferences = context.getSharedPreferences(PREFERENCE_FILE_NAME, Context.MODE_PRIVATE);
     }
 
+    // TODO is this random enough? Does it make sense to generate our own bits and encode to hex using Okio's ByteString?
+    private static String makeRandomVisitorId() {
+        return UUID.randomUUID().toString().replaceAll("-", "").substring(0, 16);
+    }
+
     /**
      * Use this to disable Piwik, e.g. if the user opted out of tracking.
      * Piwik will persist the choice and remain disable on next instance creation.</p>
@@ -31,7 +36,7 @@ public final class Settings {
      *
      * @param optOut true to disable reporting
      */
-    public void setOptOut(boolean optOut, int siteId) {
+    public void setOptOut(int siteId, boolean optOut) {
         preferences.edit().putBoolean(KEY_OPT_OUT + siteId, optOut).apply();
     }
 
@@ -97,10 +102,5 @@ public final class Settings {
         Set<String> tracked = preferences.getStringSet(KEY_TRACKED_INSTALLS + siteId, Collections.<String>emptySet());
         tracked.add(packageName + ":" + versionCode);
         preferences.edit().putStringSet(KEY_TRACKED_INSTALLS + siteId, tracked).apply();
-    }
-
-    // TODO is this random enough? Does it make sense to generate our own bits and encode to hex using Okio's ByteString?
-    private static String makeRandomVisitorId() {
-        return UUID.randomUUID().toString().replaceAll("-", "").substring(0, 16);
     }
 }

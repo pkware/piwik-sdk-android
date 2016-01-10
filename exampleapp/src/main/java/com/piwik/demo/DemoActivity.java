@@ -7,10 +7,7 @@
 
 package com.piwik.demo;
 
-import android.content.Context;
 import android.content.Intent;
-import android.net.wifi.WifiManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
@@ -19,11 +16,9 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
-import org.piwik.sdk.PiwikApplication;
 import org.piwik.sdk.TrackMe;
 import org.piwik.sdk.Tracker;
 import org.piwik.sdk.ecommerce.EcommerceItems;
-import org.piwik.sdk.tools.Logy;
 
 import java.util.Arrays;
 import java.util.List;
@@ -38,7 +33,8 @@ public class DemoActivity extends ActionBarActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_demo);
         items = new EcommerceItems();
-        initPiwik();
+
+        initTrackViewListeners();
     }
 
 
@@ -64,57 +60,13 @@ public class DemoActivity extends ActionBarActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private String getUserId() {
-        String userId;
-
-        try {
-            WifiManager wm = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-            userId = wm.getConnectionInfo().getMacAddress();
-            Logy.i("user_id", "wifi mac " + userId);
-        } catch (Exception e) {
-            Logy.e("user_id", "wifi is not available", e);
-            userId = null;
-        }
-
-        if (userId == null) {
-            long result = Build.ID.hashCode();
-            result = 31 * result + Build.DISPLAY.hashCode();
-            result = 31 * result + Build.PRODUCT.hashCode();
-            result = 31 * result + Build.DEVICE.hashCode();
-            result = 31 * result + Build.BOARD.hashCode();
-            result = 31 * result + Build.CPU_ABI.hashCode();
-            result = 31 * result + Build.CPU_ABI2.hashCode();
-            result = 31 * result + Build.MANUFACTURER.hashCode();
-            result = 31 * result + Build.BRAND.hashCode();
-            result = 31 * result + Build.MODEL.hashCode();
-            result = 31 * result + Build.BOOTLOADER.hashCode();
-
-            userId = Long.toString(result);
-            Logy.i("user_id", "android.os.Build used " + userId);
-        }
-
-        return userId;
-    }
-
-    private void initPiwik() {
-        // do not send http requests
-        ((PiwikApplication) getApplication()).getPiwik().setDryRun(false);
-
-        ((PiwikApplication) getApplication()).getTracker()
-                .setDispatchInterval(5000)
-                .trackAppDownload()
-                .setUserId(getUserId());
-
-        initTrackViewListeners();
-    }
-
     protected void initTrackViewListeners() {
         // simple track view
         Button button = (Button) findViewById(R.id.trackMainScreenViewButton);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                ((PiwikApplication) getApplication()).getTracker().trackScreenView("/", "Main screen");
+                Injector.marketingTracker.trackScreenView("/", "Main screen");
             }
         });
 
@@ -123,7 +75,7 @@ public class DemoActivity extends ActionBarActivity {
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                ((PiwikApplication) getApplication()).getTracker()
+                Injector.marketingTracker
                         .trackScreenView(
                                 new TrackMe()
                                         .setScreenCustomVariable(1, "first", "var")
@@ -137,7 +89,7 @@ public class DemoActivity extends ActionBarActivity {
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                ((PiwikApplication) getApplication()).getTracker().trackException(new Exception("OnPurposeException"), "Crash button", false);
+                Injector.engineeringTracker.trackException(new Exception("OnPurposeException"), "Crash button", false);
             }
         });
 
@@ -152,10 +104,10 @@ public class DemoActivity extends ActionBarActivity {
                             ((EditText) findViewById(R.id.goalTextEditView)).getText().toString()
                     );
                 } catch (Exception e) {
-                    ((PiwikApplication) getApplication()).getTracker().trackException(e, "wrong revenue", false);
+                    Injector.engineeringTracker.trackException(e, "wrong revenue", false);
                     revenue = 0;
                 }
-                ((PiwikApplication) getApplication()).getTracker().trackGoal(1, revenue);
+                Injector.marketingTracker.trackGoal(1, revenue);
             }
         });
 
@@ -181,7 +133,7 @@ public class DemoActivity extends ActionBarActivity {
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Tracker tracker = ((PiwikApplication) getApplication()).getTracker();
+                Tracker tracker = Injector.marketingTracker;
                 tracker.trackEcommerceCartUpdate(8600, items);
             }
         });
@@ -190,7 +142,7 @@ public class DemoActivity extends ActionBarActivity {
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Tracker tracker = ((PiwikApplication) getApplication()).getTracker();
+                Tracker tracker = Injector.marketingTracker;
                 tracker.trackEcommerceOrder(String.valueOf(10000 * Math.random()), 10000, 1000, 2000, 3000, 500, items);
             }
         });

@@ -76,21 +76,6 @@
         </TableRow>
 
         <TableRow
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="5dp">
-
-            <CheckBox
-                android:id="@+id/dryRunCheckbox"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_column="0"
-                android:layout_span="3"
-                android:checked="false"
-                android:text="Dry Run"/>
-        </TableRow>
-
-        <TableRow
             android:id="@+id/tableRow"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"

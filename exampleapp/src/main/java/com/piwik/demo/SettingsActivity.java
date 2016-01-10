@@ -17,7 +17,6 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 
 import org.piwik.sdk.PiwikApplication;
-import org.piwik.sdk.QuickTrack;
 import org.piwik.sdk.tools.Logy;
 
 
@@ -33,18 +32,9 @@ public class SettingsActivity extends Activity {
             }
         });
 
-        // Dry run
-        CheckBox dryRun = (CheckBox) findViewById(R.id.dryRunCheckbox);
-        dryRun.setChecked(((PiwikApplication) getApplication()).getPiwik().isDryRun());
-        dryRun.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ((PiwikApplication) getApplication()).getPiwik().setDryRun(((CheckBox) v).isChecked());
-            }
-        });
-
         // out out
         CheckBox optOut = (CheckBox) findViewById(R.id.optOutCheckbox);
+        optOut.setChecked(Injector.piwik);
         optOut.setChecked(((PiwikApplication) getApplication()).getPiwik().isOptOut());
         optOut.setOnClickListener(new View.OnClickListener() {
             @Override
