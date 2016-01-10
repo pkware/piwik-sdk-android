@@ -1,9 +1,3 @@
-/*
- * Android SDK for Piwik
- *
- * @link https://github.com/piwik/piwik-android-sdk
- * @license https://github.com/piwik/piwik-sdk-android/blob/master/LICENSE BSD-3 Clause
- */
 package org.piwik.sdk.dispatcher;
 
 import android.support.annotation.NonNull;

@@ -1,10 +1,3 @@
-/*
- * Android SDK for Piwik
- *
- * @link https://github.com/piwik/piwik-android-sdk
- * @license https://github.com/piwik/piwik-sdk-android/blob/master/LICENSE BSD-3 Clause
- */
-
 package org.piwik.sdk.ecommerce;
 
 import android.support.annotation.Nullable;
@@ -17,7 +10,6 @@ import java.util.Map;
 
 public class EcommerceItems {
     public Map<String, JSONArray> items = new HashMap<>();
-
 
     /**
      * Adds a product into the ecommerce order. Must be called for each product in the order.

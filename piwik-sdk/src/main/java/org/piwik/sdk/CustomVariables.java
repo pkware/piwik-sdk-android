@@ -1,10 +1,3 @@
-/*
- * Android SDK for Piwik
- *
- * @link https://github.com/piwik/piwik-android-sdk
- * @license https://github.com/piwik/piwik-sdk-android/blob/master/LICENSE BSD-3 Clause
- */
-
 package org.piwik.sdk;
 
 import org.json.JSONArray;
@@ -16,6 +9,7 @@ import java.util.HashMap;
 
 
 public class CustomVariables extends HashMap<String, JSONArray> {
+    protected static final int MAX_LENGTH = 200;
     private static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "CustomVariables";
     /**
      * You can track up to 5 custom variables for each user to your app,
@@ -31,7 +25,6 @@ public class CustomVariables extends HashMap<String, JSONArray> {
      * }
      */
     private static final int MAX_VARIABLES = 5;
-    protected static final int MAX_LENGTH = 200;
 
     public CustomVariables() {
         super(MAX_VARIABLES);

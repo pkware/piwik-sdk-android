@@ -1,9 +1,8 @@
 package org.piwik.sdk.dispatcher;
 
-// FIXME javadoc this correctly
-
 import org.piwik.sdk.storage.StorageEngine;
 
+// FIXME javadoc this correctly
 /**
  * The dryRun flag set to true prevents any data from being sent to Piwik.
  * The dryRun flag should be set whenever you are testing or debugging an implementation and do not want
