@@ -16,23 +16,23 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.piwik.sdk.tools.Logy;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Iterator;
 import java.util.List;
+
+import okhttp3.HttpUrl;
 
 
 public class TrackerBulkURLWrapper {
     private static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "TrackerBulkURLWrapper";
     private static final int EVENTS_PER_PAGE = 20;
-    private int mCurrentPage = 0;
     private final int mPages;
-    private final URL mApiUrl;
+    private final HttpUrl serverUrl;
     private final String mAuthtoken;
     private final List<String> mEvents;
+    private int mCurrentPage = 0;
 
-    public TrackerBulkURLWrapper(@NonNull final URL apiUrl, @NonNull final List<String> events, @Nullable final String authToken) {
-        mApiUrl = apiUrl;
+    public TrackerBulkURLWrapper(@NonNull HttpUrl serverUrl, @NonNull List<String> events, @Nullable String authToken) {
+        this.serverUrl = serverUrl;
         mAuthtoken = authToken;
         mPages = (int) Math.ceil(events.size() * 1.0 / EVENTS_PER_PAGE);
         mEvents = events;
@@ -69,8 +69,8 @@ public class TrackerBulkURLWrapper {
     }
 
     @NonNull
-    public URL getApiUrl() {
-        return mApiUrl;
+    public HttpUrl getServerUrl() {
+        return serverUrl;
     }
 
     /**
@@ -120,16 +120,12 @@ public class TrackerBulkURLWrapper {
      * "http://domain.com/piwik.php?idsite=1&url=http://a.org&action_name=Test bulk log Pageview&rec=1"
      */
     @Nullable
-    public URL getEventUrl(Page page) {
-        if (page == null || page.isEmpty())
+    public HttpUrl getEventUrl(Page page) {
+        if (page == null || page.isEmpty()) {
             return null;
-
-        try {
-            return new URL(getApiUrl().toString() + mEvents.get(page.fromIndex));
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
         }
-        return null;
+
+        return getServerUrl().newBuilder().query(mEvents.get(page.fromIndex)).build();
     }
 
     public final class Page {

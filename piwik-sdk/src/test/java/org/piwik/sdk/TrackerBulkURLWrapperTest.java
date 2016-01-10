@@ -73,7 +73,7 @@ public class TrackerBulkURLWrapperTest {
     public void getApiUrl() throws MalformedURLException {
         String url = "http://www.com/java.htm";
         TrackerBulkURLWrapper wrapper = createWrapper(url, "");
-        assertThat(wrapper.getApiUrl().toString()).isEqualTo(url);
+        assertThat(wrapper.getServerUrl().toString()).isEqualTo(url);
     }
 
     @Test

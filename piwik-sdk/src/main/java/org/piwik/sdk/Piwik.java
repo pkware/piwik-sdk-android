@@ -8,36 +8,24 @@
 package org.piwik.sdk;
 
 import android.content.Context;
-import android.content.SharedPreferences;
-import android.support.annotation.NonNull;
 
-import org.piwik.sdk.tools.Logy;
+import org.piwik.sdk.dispatcher.Dispatcher;
+import org.piwik.sdk.storage.InMemoryStorageEngine;
+import org.piwik.sdk.storage.StorageEngine;
 
-import java.net.MalformedURLException;
-
-
-public class Piwik {
+public final class Piwik {
     public static final String LOGGER_PREFIX = "PIWIK:";
-    public static final String PREFERENCE_FILE_NAME = "org.piwik.sdk";
-    public static final String PREFERENCE_KEY_OPTOUT = "piwik.optout";
     private final Context mContext;
-    private boolean mOptOut = false;
-    private boolean mDryRun = false;
 
-    private static Piwik sInstance;
-    private boolean mDebug = BuildConfig.DEBUG;
-    private final SharedPreferences mSharedPreferences;
+    private final Settings settings;
+    private final StorageEngine storageEngine;
+    private final Dispatcher dispatcher;
 
-    public static synchronized Piwik getInstance(Context context) {
-        if (sInstance == null)
-            sInstance = new Piwik(context);
-        return sInstance;
-    }
-
-    private Piwik(Context context) {
-        mContext = context.getApplicationContext();
-        mSharedPreferences = getContext().getSharedPreferences(PREFERENCE_FILE_NAME, Context.MODE_PRIVATE);
-        mOptOut = getSharedPreferences().getBoolean(PREFERENCE_KEY_OPTOUT, false);
+    private Piwik(Builder builder) {
+        mContext = builder.context;
+        storageEngine = builder.storageEngine;
+        dispatcher = builder.dispatcher;
+        settings = new Settings(mContext);
     }
 
     protected Context getContext() {
@@ -45,81 +33,48 @@ public class Piwik {
     }
 
     /**
-     * @param trackerUrl (required) Tracking HTTP API endpoint, for example, http://your-piwik-domain.tld/piwik.php
-     * @param siteId     (required) id of site
-     * @param authToken  (optional) could be null or valid auth token.
+     * @param siteId (required) id of site
      * @return Tracker object
-     * @throws MalformedURLException
-     * @deprecated Use {@link #newTracker(String, int)} as there are security concerns over the authToken.
      */
-    @Deprecated
-    public synchronized Tracker newTracker(@NonNull String trackerUrl, int siteId, String authToken) throws MalformedURLException {
-        return new Tracker(trackerUrl, siteId, authToken, this);
-    }
-
-    /**
-     * @param trackerUrl (required) Tracking HTTP API endpoint, for example, http://your-piwik-domain.tld/piwik.php
-     * @param siteId     (required) id of site
-     * @return Tracker object
-     * @throws MalformedURLException
-     */
-    public synchronized Tracker newTracker(@NonNull String trackerUrl, int siteId) throws MalformedURLException {
-        return new Tracker(trackerUrl, siteId, null, this);
-    }
-
-    /**
-     * Use this to disable Piwik, e.g. if the user opted out of tracking.
-     * Piwik will persist the choice and remain disable on next instance creation.</p>
-     * The choice is stored in {@link #PREFERENCE_FILE_NAME} under the key {@link #PREFERENCE_KEY_OPTOUT}.
-     *
-     * @param optOut true to disable reporting
-     */
-    public void setOptOut(boolean optOut) {
-        mOptOut = optOut;
-        getSharedPreferences().edit().putBoolean(PREFERENCE_KEY_OPTOUT, optOut).apply();
-    }
-
-    /**
-     * @return true if Piwik is currently disabled
-     */
-    public boolean isOptOut() {
-        return mOptOut;
-    }
-
-    public boolean isDryRun() {
-        return mDryRun;
-    }
-
-    public boolean isDebug() {
-        return mDebug;
-    }
-
-    public void setDebug(boolean debug) {
-        mDebug = debug;
-        Logy.sLoglevel = debug ? Logy.VERBOSE : Logy.QUIET;
-    }
-
-    /**
-     * The dryRun flag set to true prevents any data from being sent to Piwik.
-     * The dryRun flag should be set whenever you are testing or debugging an implementation and do not want
-     * test data to appear in your Piwik reports. To set the dry run flag, use:
-     *
-     * @param dryRun true if you don't want to send any data to piwik
-     */
-    public void setDryRun(boolean dryRun) {
-        mDryRun = dryRun;
+    public Tracker newTracker(int siteId) {
+        return new Tracker(storageEngine, siteId, this, settings);
     }
 
     public String getApplicationDomain() {
-        return getContext().getPackageName();
+        return mContext.getPackageName();
     }
 
-    /**
-     * Returns the shared preferences used by Piwik that are stored under {@link #PREFERENCE_FILE_NAME}
-     *
-     * @return Piwik's SharedPreferences instance
-     */
-    public SharedPreferences getSharedPreferences() {
-        return mSharedPreferences;
+    public void dispatch() {
+        dispatcher.dispatch(storageEngine);
+    }
+
+    public static class Builder {
+        private final Context context;
+        private Dispatcher dispatcher;
+        private StorageEngine storageEngine;
+
+        public Builder(Context context) {
+            this.context = context.getApplicationContext();
+        }
+
+        public Builder dispatcher(Dispatcher dispatcher) {
+            this.dispatcher = dispatcher;
+            return this;
+        }
+
+        public Builder storageEngine(StorageEngine storageEngine) {
+            this.storageEngine = storageEngine;
+            return this;
+        }
+
+        public Piwik build() {
+            if (dispatcher == null) {
+                throw new IllegalArgumentException("You must provide a Dispatcher using dispatcher()");
+            }
+            if (storageEngine == null) {
+                storageEngine = new InMemoryStorageEngine();
+            }
+            return new Piwik(this);
+        }
     }
 }

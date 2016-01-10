@@ -36,7 +36,7 @@ android {
     buildToolsVersion '23.0.2'
 
     defaultConfig {
-        minSdkVersion 10
+        minSdkVersion 11
         targetSdkVersion 23
         versionCode myVersionCode
         versionName myVersionName
@@ -48,6 +48,7 @@ dependencies {
         mavenCentral()
     }
     compile 'com.android.support:support-annotations:23.1.1'
+    compile 'com.squareup.okhttp3:okhttp:3.0.0-RC1'
     // Espresso
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.0')
     androidTestCompile('com.android.support.test:testing-support-lib:0.1')

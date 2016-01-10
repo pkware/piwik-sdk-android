@@ -56,14 +56,14 @@ public class DispatcherTest {
 
     @Test
     public void setTimeout() throws Exception {
-        Dispatcher dispatcher = createTracker().getDispatcher();
+        WebDispatcher dispatcher = createTracker().getDispatcher();
         dispatcher.setTimeOut(100);
         assertThat(dispatcher.getTimeOut()).isEqualTo(100);
     }
 
     @Test
     public void forceDispatchTwice() throws Exception {
-        Dispatcher dispatcher = createTracker().getDispatcher();
+        WebDispatcher dispatcher = createTracker().getDispatcher();
         dispatcher.setDispatchInterval(-1);
         dispatcher.setTimeOut(20);
         dispatcher.submit("url");
@@ -74,7 +74,7 @@ public class DispatcherTest {
 
     @Test
     public void doPostFailed() throws Exception {
-        Dispatcher dispatcher = createTracker().getDispatcher();
+        WebDispatcher dispatcher = createTracker().getDispatcher();
         dispatcher.setTimeOut(1);
         assertThat(dispatcher.dispatch(new Packet(null, null))).isFalse();
         assertThat(dispatcher.dispatch(new Packet(new URL("http://test/?s=^test"), new JSONObject()))).isFalse();
@@ -82,15 +82,44 @@ public class DispatcherTest {
 
     @Test
     public void doGetFailed() throws Exception {
-        Dispatcher dispatcher = createTracker().getDispatcher();
+        WebDispatcher dispatcher = createTracker().getDispatcher();
         dispatcher.setTimeOut(1);
         assertThat(dispatcher.dispatch(new Packet(null))).isFalse();
     }
 
     @Test
     public void urlEncodeUTF8() throws Exception {
-        assertThat(Dispatcher.urlEncodeUTF8((String) null)).isEmpty();
+        assertThat(WebDispatcher.urlEncodeUTF8((String) null)).isEmpty();
     }
+
+    @Test
+    public void sessionStartRaceCondition() throws Exception {
+        for (int i = 0; i < 10; i++) {
+            Log.d("RaceConditionTest", (10 - i) + " race-condition tests to go.");
+            getPiwik().setDryRun(true);
+            final Tracker tracker = createTracker();
+            tracker.setDispatchInterval(0);
+            final int threadCount = 10;
+            final int queryCount = 3;
+            final List<String> createdEvents = Collections.synchronizedList(new ArrayList<String>());
+            launchTestThreads(tracker, threadCount, queryCount, createdEvents);
+            Thread.sleep(500);
+            checkForMIAs(threadCount * queryCount, createdEvents, tracker.getDispatcher().getDryRunOutput());
+            List<String> output = getFlattenedQueries(tracker.getDispatcher().getDryRunOutput());
+            for (String out : output) {
+                if (output.indexOf(out) == 0) {
+                    assertThat(out.contains("lang")).isTrue();
+                    assertThat(out.contains("_idts")).isTrue();
+                    assertThat(out.contains("new_visit")).isTrue();
+                } else {
+                    assertThat(out.contains("lang")).isFalse();
+                    assertThat(out.contains("_idts")).isFalse();
+                    assertThat(out.contains("new_visit")).isFalse();
+                }
+            }
+        }
+    }
+
 
     @Test
     public void sessionStartRaceCondition() throws Exception {
@@ -150,49 +179,6 @@ public class DispatcherTest {
         checkForMIAs(threadCount * queryCount, createdEvents, tracker.getDispatcher().getDryRunOutput());
     }
 
-    @Test
-    public void batchDispatch() throws Exception {
-        final Tracker tracker = createTracker();
-        tracker.setDispatchInterval(1500);
-
-        final int threadCount = 5;
-        final int queryCount = 5;
-        final List<String> createdEvents = Collections.synchronizedList(new ArrayList<String>());
-        launchTestThreads(tracker, threadCount, queryCount, createdEvents);
-        Thread.sleep(1000);
-        assertThat(createdEvents).hasSize(threadCount * queryCount);
-        assertThat(tracker.getDispatcher().getDryRunOutput()).isEmpty();
-        Thread.sleep(1000);
-
-        checkForMIAs(threadCount * queryCount, createdEvents, tracker.getDispatcher().getDryRunOutput());
-    }
-
-    @Test
-    public void randomDispatchIntervals() throws Exception {
-        final Tracker tracker = createTracker();
-
-        final int threadCount = 10;
-        final int queryCount = 100;
-        final List<String> createdEvents = Collections.synchronizedList(new ArrayList<String>());
-
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    while (getFlattenedQueries(new ArrayList<>(tracker.getDispatcher().getDryRunOutput())).size() != threadCount * queryCount)
-                        tracker.setDispatchInterval(new Random().nextInt(20 - -1) + -1);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-            }
-        }).start();
-
-        launchTestThreads(tracker, threadCount, queryCount, createdEvents);
-
-        checkForMIAs(threadCount * queryCount, createdEvents, tracker.getDispatcher().getDryRunOutput());
-    }
-
     public static void checkForMIAs(int expectedEvents, List<String> createdEvents, List<Packet> dryRunOutput) throws Exception {
         int previousEventCount = 0;
         int previousFlatQueryCount = 0;
@@ -226,6 +212,23 @@ public class DispatcherTest {
         Log.d("checkForMIAs", "All send queries are accounted for.");
     }
 
+    @Test
+    public void batchDispatch() throws Exception {
+        final Tracker tracker = createTracker();
+        tracker.setDispatchInterval(1500);
+
+        final int threadCount = 5;
+        final int queryCount = 5;
+        final List<String> createdEvents = Collections.synchronizedList(new ArrayList<String>());
+        launchTestThreads(tracker, threadCount, queryCount, createdEvents);
+        Thread.sleep(1000);
+        assertThat(createdEvents).hasSize(threadCount * queryCount);
+        assertThat(tracker.getDispatcher().getDryRunOutput()).isEmpty();
+        Thread.sleep(1000);
+
+        checkForMIAs(threadCount * queryCount, createdEvents, tracker.getDispatcher().getDryRunOutput());
+    }
+
     public static void launchTestThreads(final Tracker tracker, int threadCount, final int queryCount, final List<String> createdQueries) {
         Log.d("launchTestThreads", "Launching " + threadCount + " threads, " + queryCount + " queries each");
         for (int i = 0; i < threadCount; i++) {
@@ -252,6 +255,32 @@ public class DispatcherTest {
             }).start();
         }
         Log.d("launchTestThreads", "All launched.");
+    }
+
+    @Test
+    public void randomDispatchIntervals() throws Exception {
+        final Tracker tracker = createTracker();
+
+        final int threadCount = 10;
+        final int queryCount = 100;
+        final List<String> createdEvents = Collections.synchronizedList(new ArrayList<String>());
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    while (getFlattenedQueries(new ArrayList<>(tracker.getDispatcher().getDryRunOutput())).size() != threadCount * queryCount)
+                        tracker.setDispatchInterval(new Random().nextInt(20 - -1) + -1);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+            }
+        }).start();
+
+        launchTestThreads(tracker, threadCount, queryCount, createdEvents);
+
+        checkForMIAs(threadCount * queryCount, createdEvents, tracker.getDispatcher().getDryRunOutput());
     }
 
     public static List<String> getFlattenedQueries(List<Packet> packets) throws Exception {

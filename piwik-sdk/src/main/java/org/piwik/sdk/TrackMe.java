@@ -9,7 +9,7 @@ package org.piwik.sdk;
 
 import android.support.annotation.NonNull;
 
-import org.piwik.sdk.dispatcher.Dispatcher;
+import org.piwik.sdk.dispatcher.WebDispatcher;
 
 import java.util.HashMap;
 
@@ -113,7 +113,7 @@ public class TrackMe {
      */
     public synchronized String build() {
         set(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES, mScreenCustomVariable.toString());
-        return Dispatcher.urlEncodeUTF8(mQueryParams);
+        return WebDispatcher.urlEncodeUTF8(mQueryParams);
     }
 
     public synchronized String get(@NonNull QueryParams queryParams) {

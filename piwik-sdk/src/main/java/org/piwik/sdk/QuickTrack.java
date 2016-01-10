@@ -34,11 +34,11 @@ public class QuickTrack {
      * @param tracker the tracker that should receive the exception events.
      * @return returns the new (but already active) exception handler.
      */
-    public static Thread.UncaughtExceptionHandler trackUncaughtExceptions(Tracker tracker) {
+    public static Thread.UncaughtExceptionHandler trackUncaughtExceptions(Piwik piwik, Tracker tracker) {
         if (Thread.getDefaultUncaughtExceptionHandler() instanceof PiwikExceptionHandler) {
             throw new RuntimeException("Trying to wrap an existing PiwikExceptionHandler.");
         }
-        Thread.UncaughtExceptionHandler handler = new PiwikExceptionHandler(tracker);
+        Thread.UncaughtExceptionHandler handler = new PiwikExceptionHandler(piwik, tracker);
         Thread.setDefaultUncaughtExceptionHandler(handler);
         return handler;
     }
@@ -52,7 +52,7 @@ public class QuickTrack {
      * @return the registered callback, you need this if you wanted to unregister the callback again
      */
     @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-    public static Application.ActivityLifecycleCallbacks bindToApp(final Application app, final Tracker tracker) {
+    public static Application.ActivityLifecycleCallbacks bindToApp(final Application app, final Piwik piwik, final Tracker tracker) {
         final Application.ActivityLifecycleCallbacks callback = new Application.ActivityLifecycleCallbacks() {
             @Override
             public void onActivityCreated(Activity activity, Bundle bundle) {
@@ -77,7 +77,7 @@ public class QuickTrack {
             @Override
             public void onActivityStopped(Activity activity) {
                 if (activity != null && activity.isTaskRoot()) {
-                    tracker.dispatch();
+                    piwik.dispatch();
                 }
             }
 
