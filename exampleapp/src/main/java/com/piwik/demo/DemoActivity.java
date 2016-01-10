@@ -9,9 +9,9 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
-import org.piwik.sdk.TrackMe;
-import org.piwik.sdk.Tracker;
-import org.piwik.sdk.ecommerce.EcommerceItems;
+import com.pkware.piwik.sdk.TrackMe;
+import com.pkware.piwik.sdk.Tracker;
+import com.pkware.piwik.sdk.ecommerce.EcommerceItems;
 
 import java.util.Arrays;
 import java.util.List;

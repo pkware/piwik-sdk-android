@@ -3,11 +3,11 @@ package com.piwik.demo;
 import android.app.Application;
 import android.os.Build;
 
-import org.piwik.sdk.Piwik;
-import org.piwik.sdk.dispatcher.Dispatcher;
-import org.piwik.sdk.dispatcher.DryRunDispatcher;
-import org.piwik.sdk.dispatcher.WebDispatcher;
-import org.piwik.sdk.storage.InMemoryStorageEngine;
+import com.pkware.piwik.sdk.Piwik;
+import com.pkware.piwik.sdk.dispatcher.Dispatcher;
+import com.pkware.piwik.sdk.dispatcher.DryRunDispatcher;
+import com.pkware.piwik.sdk.dispatcher.WebDispatcher;
+import com.pkware.piwik.sdk.storage.InMemoryStorageEngine;
 
 import java.util.Timer;
 import java.util.TimerTask;

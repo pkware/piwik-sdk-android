@@ -9,8 +9,8 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 
-import org.piwik.sdk.PiwikApplication;
-import org.piwik.sdk.tools.Logy;
+import com.pkware.piwik.sdk.PiwikApplication;
+import com.pkware.piwik.sdk.tools.Logy;
 
 
 public class SettingsActivity extends Activity {

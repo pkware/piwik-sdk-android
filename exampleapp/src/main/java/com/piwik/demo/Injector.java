@@ -1,7 +1,7 @@
 package com.piwik.demo;
 
-import org.piwik.sdk.Piwik;
-import org.piwik.sdk.Tracker;
+import com.pkware.piwik.sdk.Piwik;
+import com.pkware.piwik.sdk.Tracker;
 
 public class Injector {
 
