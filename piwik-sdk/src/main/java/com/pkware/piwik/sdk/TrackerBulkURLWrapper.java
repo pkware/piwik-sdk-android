@@ -94,7 +94,7 @@ public class TrackerBulkURLWrapper {
             params.put("requests", new JSONArray(pageElements));
 
             if (mAuthtoken != null) {
-                params.put(QueryParams.AUTHENTICATION_TOKEN.toString(), mAuthtoken);
+                params.put(QueryParams.AUTHENTICATION_TOKEN, mAuthtoken);
             }
         } catch (JSONException e) {
             Logy.w(LOGGER_TAG, "Cannot create json object", e);

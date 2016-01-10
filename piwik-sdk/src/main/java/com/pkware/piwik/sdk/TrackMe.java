@@ -1,7 +1,5 @@
 package com.pkware.piwik.sdk;
 
-import android.support.annotation.NonNull;
-
 import com.pkware.piwik.sdk.dispatcher.WebDispatcher;
 
 import java.util.HashMap;
@@ -14,14 +12,6 @@ public class TrackMe {
     private static final int DEFAULT_QUERY_CAPACITY = 14;
     private final HashMap<String, String> mQueryParams = new HashMap<>(DEFAULT_QUERY_CAPACITY);
     private final CustomVariables mScreenCustomVariable = new CustomVariables();
-
-    protected synchronized TrackMe set(@NonNull String key, String value) {
-        if (value == null)
-            mQueryParams.remove(key);
-        else if (value.length() > 0)
-            mQueryParams.put(key, value);
-        return this;
-    }
 
     /**
      * You can set any additional Tracking API Parameters within the SDK.
@@ -36,28 +26,32 @@ public class TrackMe {
      * @param value value
      * @return tracker instance
      */
-    public synchronized TrackMe set(@NonNull QueryParams key, String value) {
-        set(key.toString(), value);
+    public synchronized TrackMe set(@QueryParams.QueryParam String key, String value) {
+        if (value == null) {
+            mQueryParams.remove(key);
+        } else if (value.length() > 0) {
+            mQueryParams.put(key, value);
+        }
         return this;
     }
 
-    public synchronized TrackMe set(@NonNull QueryParams key, int value) {
+    public synchronized TrackMe set(@QueryParams.QueryParam String key, int value) {
         set(key, Integer.toString(value));
         return this;
     }
 
-    public synchronized TrackMe set(@NonNull QueryParams key, float value) {
+    public synchronized TrackMe set(@QueryParams.QueryParam String key, float value) {
         set(key, Float.toString(value));
         return this;
     }
 
-    public synchronized TrackMe set(@NonNull QueryParams key, long value) {
+    public synchronized TrackMe set(@QueryParams.QueryParam String key, long value) {
         set(key, Long.toString(value));
         return this;
     }
 
-    public synchronized boolean has(@NonNull QueryParams queryParams) {
-        return mQueryParams.containsKey(queryParams.toString());
+    public synchronized boolean has(@QueryParams.QueryParam String queryParams) {
+        return mQueryParams.containsKey(queryParams);
     }
 
     /**
@@ -67,7 +61,7 @@ public class TrackMe {
      * @param value value
      * @return this (for chaining)
      */
-    public synchronized TrackMe trySet(@NonNull QueryParams key, int value) {
+    public synchronized TrackMe trySet(@QueryParams.QueryParam String key, int value) {
         return trySet(key, String.valueOf(value));
     }
 
@@ -78,11 +72,11 @@ public class TrackMe {
      * @param value value
      * @return this (for chaining)
      */
-    public synchronized TrackMe trySet(@NonNull QueryParams key, float value) {
+    public synchronized TrackMe trySet(@QueryParams.QueryParam String key, float value) {
         return trySet(key, String.valueOf(value));
     }
 
-    public synchronized TrackMe trySet(@NonNull QueryParams key, long value) {
+    public synchronized TrackMe trySet(@QueryParams.QueryParam String key, long value) {
         return trySet(key, String.valueOf(value));
     }
 
@@ -93,9 +87,10 @@ public class TrackMe {
      * @param value value
      * @return this (for chaining)
      */
-    public synchronized TrackMe trySet(@NonNull QueryParams key, String value) {
-        if (!has(key))
+    public synchronized TrackMe trySet(@QueryParams.QueryParam String key, String value) {
+        if (!has(key)) {
             set(key, value);
+        }
         return this;
     }
 
@@ -109,8 +104,8 @@ public class TrackMe {
         return WebDispatcher.urlEncodeUTF8(mQueryParams);
     }
 
-    public synchronized String get(@NonNull QueryParams queryParams) {
-        return mQueryParams.get(queryParams.toString());
+    public synchronized String get(@QueryParams.QueryParam String queryParams) {
+        return mQueryParams.get(queryParams);
     }
 
     /**

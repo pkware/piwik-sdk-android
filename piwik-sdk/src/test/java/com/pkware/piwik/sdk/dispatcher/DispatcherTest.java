@@ -4,7 +4,6 @@ import android.util.Log;
 
 import com.pkware.piwik.sdk.FullEnvTestRunner;
 import com.pkware.piwik.sdk.Piwik;
-import com.pkware.piwik.sdk.QueryParams;
 import com.pkware.piwik.sdk.TrackMe;
 import com.pkware.piwik.sdk.Tracker;
 
