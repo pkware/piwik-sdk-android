@@ -20,15 +20,6 @@ Integrating Piwik into your Android app
 6. [Advanced tracker usage](#advanced-tracker-usage)
 
 
-### Include library
-Add this to your apps build.gradle file:
-
-```java
-
-compile 'org.piwik.sdk:piwik-sdk:0.0.3'
-```
-
-
 ### Initialize Tracker
 
 #### Basic
@@ -276,7 +267,24 @@ Browse [the code](https://github.com/piwik/piwik-sdk-android/tree/master/example
 * Explain your changes, we can see what changed, but tell us why.
 * If your PR passes the travis-ci build and has no merge conflicts, just wait, otherwise fix the code first.
 
+## Download
+```groovy
+compile 'com.squareup.sqlbrite:sqlbrite:0.5.0'
+```
+
+Snapshots of the development version are available in [Sonatype's `snapshots` repository][snap].
+
+
 ## License
 
-Android SDK for Piwik is released under the BSD-3 Clause license, see [LICENSE](https://github.com/piwik/piwik-sdk-android/blob/master/LICENSE).
+    Copyright 2016 PKWARE, Inc.
+    Copyright 2015 Matthias Urhahn
+    Copyright 2015 Piwik team
+    
+    Licensed under New BSD License.
+See [LICENSE](LICENSE)
 
+
+
+
+ [snap]: https://oss.sonatype.org/content/repositories/snapshots/

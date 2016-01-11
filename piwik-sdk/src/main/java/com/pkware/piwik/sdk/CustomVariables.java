@@ -8,7 +8,9 @@ import org.json.JSONObject;
 import java.util.Arrays;
 import java.util.HashMap;
 
-
+/**
+ * @see <a href=http://piwik.org/faq/how-to/faq_17931/">Custom Variable Documentation</a>
+ */
 public class CustomVariables extends HashMap<String, JSONArray> {
     protected static final int MAX_LENGTH = 200;
     private static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "CustomVariables";

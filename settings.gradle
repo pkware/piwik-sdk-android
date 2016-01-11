@@ -1,1 +1,2 @@
-include ':exampleapp', ':piwik-sdk'
+include ':exampleapp'
+include ':piwik-sdk'

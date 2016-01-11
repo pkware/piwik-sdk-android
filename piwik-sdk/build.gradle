@@ -4,42 +4,32 @@ def gitSha() {
 
 apply plugin: 'com.android.library'
 
-def myVersionName = "0.0.4"
-def myVersionCode = 4
-
-ext {
-    bintrayRepo = 'maven'
-    bintrayName = 'piwik-sdk-android'
-
-    publishedGroupId = 'org.piwik.sdk'
-    libraryName = 'Piwik SDK for Android'
-    artifact = 'piwik-sdk'
-
-    libraryDescription = 'SDK for Android to measure your apps with Piwik '
-
-    siteUrl = 'https://github.com/piwik/piwik-sdk-android'
-    gitUrl = 'https://github.com/piwik/piwik-sdk-android.git'
-
-    libraryVersion = myVersionName
-
-    developerId = 'darken'
-    developerName = 'Matthias Urhahn'
-    developerEmail = 'darken@darken.eu'
-
-    licenseName = 'BSD-3 Clause'
-    licenseUrl = 'https://github.com/piwik/piwik-sdk-android/blob/master/LICENSE'
-    allLicenses = ["BSD 3-Clause"]
-}
-
 android {
-    compileSdkVersion 23
-    buildToolsVersion '23.0.2'
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
 
     defaultConfig {
         minSdkVersion 11
-        targetSdkVersion 23
-        versionCode myVersionCode
-        versionName myVersionName
+        targetSdkVersion rootProject.ext.compileSdkVersion
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_7
+        targetCompatibility JavaVersion.VERSION_1_7
+    }
+
+    dexOptions {
+        preDexLibraries = !rootProject.ext.isCi
+    }
+
+    lintOptions {
+        textOutput 'stdout'
+    }
+
+    buildTypes {
+        debug {
+            testCoverageEnabled true
+        }
     }
 }
 
@@ -155,5 +145,4 @@ android.libraryVariants.all { variant ->
     }
 }
 
-//apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/installv1.gradle'
-//apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/bintrayv1.gradle'
+apply from: rootProject.file('gradle/gradle-mvn-push.gradle')
